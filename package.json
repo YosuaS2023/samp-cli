@@ -1,0 +1,24 @@
+{
+  "name": "sampcli",
+  "version": "1.0.0",
+  "description": "Tools untuk mengembangkan sebuah include ataupun gamemodes",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "samp": "./index.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "adm-zip": "^0.6.0",
+    "axios": "^1.18.1",
+    "chalk": "^4.1.2",
+    "commander": "^15.0.0",
+    "fs-extra": "^11.3.6",
+    "tar": "^7.5.20"
+  }
+}
