@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-const { Command } = require('commander');
-
-const initAction = require('./src/commands/init');
-
-const { configUtil } = require('./src/utils/config');
-const { logger } = require('./src/utils/logger');
-const { downloaderUtil } = require('./src/utils/downloader');
+import { Command } from 'commander';
+import initAction from 'commands/init';
+import { configUtil } from './utilSs/config';
+import { logger } from './utils/logger';
+import { downloaderUtil } from './utils/downloader';
 
 const program = new Command();
 
