@@ -1,7 +1,5 @@
-// src/utils/lockfile.ts
 import { writeFile } from 'node:fs/promises';
 
-// Mendefinisikan tipe data untuk dependency
 interface Dependency {
   constraint: string;
   resolved: string;
@@ -11,7 +9,6 @@ interface Dependency {
   repo: string;
 }
 
-// Mendefinisikan tipe data untuk runtime
 interface Runtime {
   version: string;
   platform: string;
@@ -30,7 +27,6 @@ export class Lockfile {
     this.generated = new Date().toISOString();
   }
 
-  // Menambah dependency baru dengan tipe data yang jelas
   public addDependency(key: string, depData: Partial<Dependency> & { user: string; repo: string }): void {
     this.dependencies[key] = {
       constraint: depData.constraint || "",
@@ -42,7 +38,6 @@ export class Lockfile {
     };
   }
 
-  // Mengatur runtime info
   public setRuntime(version: string, platform: string, files: string[] = []): void {
     this.runtime = {
       version,
@@ -51,7 +46,6 @@ export class Lockfile {
     };
   }
 
-  // Menyimpan object menjadi file JSON
   public async saveToFile(filePath: string): Promise<void> {
     try {
       this.generated = new Date().toISOString();
@@ -60,7 +54,7 @@ export class Lockfile {
       console.log(`Berhasil membuat file lock di: ${filePath}`);
     } catch (error) {
       console.error("Gagal menyimpan file lock:", error);
-      throw error; // Melempar error agar bisa ditangani pemanggilnya
+      throw error;
     }
   }
 }

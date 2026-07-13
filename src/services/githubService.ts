@@ -14,7 +14,7 @@ import type { DependencyPawnConfig } from '../types/pawn.js';
 export const githubService = {
   
   /**
-   * Memproses resource biner (misal: .dll atau .so) berdasarkan pawn.json
+   * Function mengolah resource tambahan dari pawn.json (versi dependency)
    */
   async processResources(user: string, repo: string, currentFolder: string = 'dependencies'): Promise<void> {
     const repoFullPath = path.join(process.cwd(), currentFolder, repo);
@@ -36,7 +36,6 @@ export const githubService = {
         return;
       }
 
-      // 1. Ambil Informasi Rilis GitHub
       const { data } = await axios.get(`https://api.github.com/repos/${user}/${repo}/releases/latest`, {
         headers: { 'User-Agent': 'Pawn-Package-Manager-CLI' }
       });
@@ -54,7 +53,6 @@ export const githubService = {
 
       const centralResourcesPath = path.join(process.cwd(), currentFolder, '.resources');
 
-      // 2. Penanganan Non-ZIP (Simpan Mentah)
       if (!targetAsset.name.endsWith('.zip')) {
         logger.warn(`Aset rilis berupa [${path.extname(targetAsset.name)}]. Menyimpan langsung mentahannya.`);
         await fs.ensureDir(centralResourcesPath);
@@ -62,7 +60,6 @@ export const githubService = {
         return;
       }
 
-      // 3. Proses Unduh ZIP Sementara
       const tempResourceZip = path.join(process.cwd(), `${repo}-resource-temp.zip`);
       logger.info(`Mengunduh paket biner resmi: ${targetAsset.name}...`);
       await downloadFile(targetAsset.browser_download_url, tempResourceZip);
@@ -71,13 +68,11 @@ export const githubService = {
       
       await fs.ensureDir(tempExtractLocation);
       await fs.ensureDir(centralResourcesPath);
-
-      // 4. Ekstraksi Menggunakan AdmZip
+      
       logger.info(`Mengekstrak paket biner ${targetAsset.name}...`);
       const zip = new AdmZip(tempResourceZip);
       zip.extractAllTo(tempExtractLocation, true);
 
-      // 5. Pemetaan Aset Terstruktur (plugins, components, filterscripts)
       const assetCategories = ['plugins', 'components', 'filterscripts'] as const;
       for (const category of assetCategories) {
         const categoryAssets = matchedResource[category];
@@ -90,13 +85,11 @@ export const githubService = {
             
             if (extractedAssetFile && fs.existsSync(extractedAssetFile)) {
               const fileName = path.basename(assetPathInsideZip);
-
-              // Simpan ke Cache (.resources)
+              
               const cacheDest = path.join(centralResourcesPath, assetPathInsideZip);
               await fs.ensureDir(path.dirname(cacheDest));
               await fs.copy(extractedAssetFile, cacheDest);
 
-              // Simpan ke Folder Projek Root
               await fs.copy(extractedAssetFile, path.join(projectDestFolder, fileName));
               logger.success(`[${category.toUpperCase()}] Berhasil memasang ${fileName}`);
             } else {
@@ -106,7 +99,6 @@ export const githubService = {
         }
       }
 
-      // 6. Pemetaan Kustom ("files") ke Direktori Target Bebas
       if (matchedResource.files && typeof matchedResource.files === 'object') {
         logger.info(`Memeriksa file dependensi tambahan ("files")...`);
         
@@ -124,7 +116,6 @@ export const githubService = {
         }
       }
 
-      // 7. Pembersihan Berkas Sementara
       await fs.remove(tempResourceZip);
       await fs.remove(tempExtractLocation);
       
@@ -132,7 +123,7 @@ export const githubService = {
 
     } catch (err: any) {
       logger.error(`Gagal memproses aset biner dari Release: ${err.message}`);
-      // Bersihkan sisa temp jika terjadi error di tengah jalan
+      
       const tempResourceZip = path.join(process.cwd(), `${repo}-resource-temp.zip`);
       const tempExtractLocation = path.join(process.cwd(), currentFolder, '.temp-extract');
       if (fs.existsSync(tempResourceZip)) await fs.remove(tempResourceZip);
@@ -175,7 +166,6 @@ export const githubService = {
             downloaded = true;
             break;
           } catch {
-            // Coba branch berikutnya
           }
         }
 

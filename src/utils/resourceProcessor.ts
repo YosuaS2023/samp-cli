@@ -3,9 +3,7 @@ import path from 'path';
 import AdmZip from 'adm-zip';
 import { glob } from 'glob';
 
-// Pindahkan logika findFileRecursively ke sini jika dibutuhkan di tempat lain
 export async function findFileRecursively(dir: string, assetPath: string | undefined): Promise<string | null> {
-  // Jika assetPath tidak ada atau undefined, langsung batalkan proses dan return null
   if (!assetPath) return null;
 
   const fileName = path.basename(assetPath);
@@ -21,7 +19,7 @@ export async function findFileRecursively(dir: string, assetPath: string | undef
     if (matchedFiles && matchedFiles.length > 0 && matchedFiles[0]) {
       return path.normalize(matchedFiles[0]);
     }
-    
+
     return null;
   } catch (error) {
     return null;
