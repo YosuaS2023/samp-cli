@@ -1,27 +1,27 @@
-const { select, input, confirm } = require('@inquirer/prompts');
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
+import { select, input, confirm } from '@inquirer/prompts';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
 
-const Lockfile = require('../utils/lockfile');
-const { configUtil } = require('../utils/config');
+import { Lockfile } from '../utils/lockfile.js';
+import { ProjectConfig } from '../config/ProjectConfig.js';
 
-async function initAction() {
-  console.log("=== Selamat Datang di SA-MP CLI Init ===\n");
+export default async function initAction(): Promise<void> {
+    console.log('=== Selamat Datang di SA-MP CLI Init ===\n');
 
-  try {
-    const tipeProject = await select({
-      message: 'Pilih jenis project:',
-      choices: [
-        { name: 'Gamemode', value: 'Gamemode' },
-        { name: 'Library', value: 'Library' },
-      ],
-    });
+    try {
+        const tipeProject = await select({
+            message: 'Pilih jenis project:',
+            choices: [
+                { name: 'Gamemode', value: 'Gamemode' },
+                { name: 'Library', value: 'Library' },
+            ],
+        });
 
-    const namaProject = await input({
-      message: 'Nama project kamu:',
-      default: 'my-samp-project'
-    });
+        const namaProject = await input({
+            message: 'Nama project kamu:',
+            default: 'my-samp-project',
+        });
 
     const inginGit = await confirm({
       message: 'Apakah nantinya ingin di-post di Git?',
@@ -53,17 +53,16 @@ async function initAction() {
     });
 
     await myLockfile.saveToFile('./pawn.lock');
-    
-    const data = {
-      user: gitUser,
-      repo: gitRepo,
-      entry: "main.pwn",
-      output: "gamemodes/main.amx",
-      dependencies: [
-      ]
-    };
 
-    configUtil.write(data);
+    const config = new ProjectConfig();
+
+    config.save({
+        user: gitUser,
+        repo: gitRepo,
+        entry: "main.pwn",
+        output: "gamemodes/main.amx",
+        dependencies: []
+    });
 
     if (tipeProject === 'Gamemode') {
       console.log("Membuat struktur folder SA-MP Legacy");
@@ -81,8 +80,7 @@ async function initAction() {
     console.log(`\nBerhasil menginisialisasi project ${tipeProject} (${namaProject})!`);
 
   } catch (error) {
-    console.log('\nProses init dibatalkan.', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('\nProses init dibatalkan.', errorMessage);
   }
 }
-
-module.exports = initAction;

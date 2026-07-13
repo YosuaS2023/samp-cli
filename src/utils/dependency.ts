@@ -1,4 +1,4 @@
-import type { DependencyInfo } from '../types'; // Sesuaikan path sesuai struktur folder Anda
+import type { DependencyInfo } from '../types/dependency.js'; // Sesuaikan path sesuai struktur folder Anda
 
 export const parseDependency = (dependencyString: string): DependencyInfo => {
   let scheme = 'regular';

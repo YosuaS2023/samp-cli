@@ -1,3 +1,3 @@
-export * from './pawn';
-export * from './github';
-export * from './dependency'
+export * from './pawn.js';
+export * from './github.js';
+export * from './dependency.js'

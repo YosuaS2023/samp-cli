@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import initAction from 'commands/init';
-import { configUtil } from './utilSs/config';
-import { logger } from './utils/logger';
-import { downloaderUtil } from './utils/downloader';
+
+import initAction from './commands/init.js';
+
+import { logger } from './utils/logger.js';
+import { githubService } from './services/githubService.js';
+import { ProjectConfig } from './config/ProjectConfig.js';
+import { config } from 'node:process';
 
 const program = new Command();
 
@@ -29,12 +32,14 @@ program
 
     logger.info(`Menyiapkan instalasi untuk: ${dependency}...`);
     
-    const sukses = await downloaderUtil.downloadGithubRepo(dependency);
+    const sukses = await githubService.downloadRepo(dependency);
 
     if (sukses) {
       logger.success(`Proses instalasi ${dependency} selesai.`);
-      configUtil.addDependency(dependency);
       
+      const config = new ProjectConfig();
+      config.addDependency(dependency);
+
       process.exit(0);
     } else {
       logger.error(`Proses instalasi ${dependency} gagal.`);
@@ -49,25 +54,31 @@ program
   .action(async () => {
     logger.info("Memulai pengecekan file konfigurasi...");
 
-    if (configUtil.exists()) {
+    const config = new ProjectConfig();
+
+    if (config.exists()) {
       logger.success("File pawn.json ditemukan!");
 
-      const config = configUtil.read();
+      const pawnjson = config.read();
       
       if (config) {
-        logger.log(`\nNama Repositori: ${config.user}/${config.repo}`);
-        logger.log(`Entry Point: ${config.entry}`);
-        logger.log(`Output File: ${config.output}\n`);
+        if (!pawnjson) {
+            logger.error("Gagal membaca pawn.json");
+            return;
+        }
+        logger.log(`\nNama Repositori: ${pawnjson.user}/${pawnjson.repo}`);
+        logger.log(`Entry Point: ${pawnjson.entry}`);
+        logger.log(`Output File: ${pawnjson.output}\n`);
 
         logger.info("Mengambil daftar dependensi (includes)...");
-        const deps = configUtil.getDependencies();
+        const deps = config.getDependencies();
         
         logger.log("Daftar Dependensi yang ditemukan:");
         
         let index = 1;
         for (const dep of deps) {
           logger.log(`  ${index}. ${dep}`);
-          await downloaderUtil.downloadGithubRepo(dep);
+          await githubService.downloadRepo(dep);
           index++;
         }
 
