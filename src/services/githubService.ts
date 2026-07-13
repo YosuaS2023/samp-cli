@@ -1,13 +1,12 @@
 import path from 'path';
 import fs from 'fs-extra';
 import axios from 'axios';
-import { glob } from 'glob'; // Pastikan sudah terinstall: npm install glob
+import AdmZip from 'adm-zip';
 
 import { logger } from '../utils/logger.js';
 import { downloadFile } from '../utils/downloader.js';
-import { extractZipAndRename } from '../utils/resourceProcessor.js';
+import { extractZipAndRename, findFileRecursively } from '../utils/resourceProcessor.js';
 import type { DependencyPawnConfig } from '../types/pawn.js';
-import type { GithubReleaseResponse } from '../types/github.js';
 
 /**
  * Service untuk menangani interaksi dengan GitHub dan instalasi dependency
@@ -25,62 +24,119 @@ export const githubService = {
 
     try {
       const repoConfig: DependencyPawnConfig = fs.readJsonSync(repoConfigPath);
-      const currentPlatform = process.platform === 'win32' ? 'windows' : 'linux';
-      const matchedResource = repoConfig.resources?.find(res => res.platform === currentPlatform);
-      if (!matchedResource) return;
+      if (!repoConfig.resources || !Array.isArray(repoConfig.resources)) return;
 
-      // 1. Download
+      logger.info(`Mendeteksi deklarasi biner (resources) pada ${repo}, mencari rilis resmi...`);
+
+      const currentPlatform = process.platform === 'win32' ? 'windows' : 'linux';
+      const matchedResource = repoConfig.resources.find(res => res.platform === currentPlatform);
+
+      if (!matchedResource) {
+        logger.warn(`Tidak ada biner resource yang mendukung platform [${currentPlatform}] untuk ${repo}`);
+        return;
+      }
+
+      // 1. Ambil Informasi Rilis GitHub
       const { data } = await axios.get(`https://api.github.com/repos/${user}/${repo}/releases/latest`, {
         headers: { 'User-Agent': 'Pawn-Package-Manager-CLI' }
       });
-      const targetAsset = data.assets.find((a: any) => new RegExp(matchedResource.name).test(a.name));
-      if (!targetAsset) return;
 
-      const downloadPath = path.join(repoFullPath, targetAsset.name);
-      await downloadFile(targetAsset.browser_download_url, downloadPath);
+      const assets = data.assets;
+      if (!assets || assets.length === 0) throw new Error("Tidak ada file rilis yang ditemukan di GitHub Release");
 
-      // 2. Ekstrak langsung di repoFullPath (tempat file zip berada)
-      if (matchedResource.archive) {
-        // Kita langsung ekstrak di repoFullPath
-        await extractZipAndRename(downloadPath, repoFullPath, repoFullPath);
+      const assetRegex = new RegExp(matchedResource.name);
+      const targetAsset = assets.find((asset: any) => assetRegex.test(asset.name));
 
-        // Helper dengan target direktori repoFullPath
-        const processMapping = async (patterns: string[] | undefined, targetDir: string) => {
-          if (!patterns) return;
-          for (const pattern of patterns) {
-            // Cari file di dalam repoFullPath
-            const files = await glob(`**/${pattern}`, { cwd: repoFullPath, absolute: true });
-            for (const file of files) {
-              const dest = path.join(process.cwd(), targetDir, path.basename(file));
-              await fs.ensureDir(path.dirname(dest));
-              await fs.copy(file, dest);
-            }
-          }
-        };
+      if (!targetAsset) {
+        logger.warn(`Tidak ada file di GitHub Releases yang cocok dengan pola nama: ${matchedResource.name}`);
+        return;
+      }
 
-        await processMapping(matchedResource.includes, 'pawno/include');
-        await processMapping(matchedResource.plugins, 'plugins');
-        await processMapping(matchedResource.components, 'components');
+      const centralResourcesPath = path.join(process.cwd(), currentFolder, '.resources');
 
-        // Khusus untuk files (Record<string, string>)
-        if (matchedResource.files) {
-          for (const [srcPattern, destName] of Object.entries(matchedResource.files)) {
-            const files = await glob(`**/${srcPattern}`, { cwd: repoFullPath, absolute: true });
-            for (const file of files) {
-              const dest = path.join(process.cwd(), destName);
-              await fs.ensureDir(path.dirname(dest));
-              await fs.copy(file, dest);
+      // 2. Penanganan Non-ZIP (Simpan Mentah)
+      if (!targetAsset.name.endsWith('.zip')) {
+        logger.warn(`Aset rilis berupa [${path.extname(targetAsset.name)}]. Menyimpan langsung mentahannya.`);
+        await fs.ensureDir(centralResourcesPath);
+        await downloadFile(targetAsset.browser_download_url, path.join(centralResourcesPath, targetAsset.name));
+        return;
+      }
+
+      // 3. Proses Unduh ZIP Sementara
+      const tempResourceZip = path.join(process.cwd(), `${repo}-resource-temp.zip`);
+      logger.info(`Mengunduh paket biner resmi: ${targetAsset.name}...`);
+      await downloadFile(targetAsset.browser_download_url, tempResourceZip);
+
+      const tempExtractLocation = path.join(process.cwd(), currentFolder, '.temp-extract');
+      
+      await fs.ensureDir(tempExtractLocation);
+      await fs.ensureDir(centralResourcesPath);
+
+      // 4. Ekstraksi Menggunakan AdmZip
+      logger.info(`Mengekstrak paket biner ${targetAsset.name}...`);
+      const zip = new AdmZip(tempResourceZip);
+      zip.extractAllTo(tempExtractLocation, true);
+
+      // 5. Pemetaan Aset Terstruktur (plugins, components, filterscripts)
+      const assetCategories = ['plugins', 'components', 'filterscripts'] as const;
+      for (const category of assetCategories) {
+        const categoryAssets = matchedResource[category];
+        if (categoryAssets && Array.isArray(categoryAssets)) {
+          const projectDestFolder = path.join(process.cwd(), category);
+          await fs.ensureDir(projectDestFolder);
+
+          for (const assetPathInsideZip of categoryAssets) {
+            const extractedAssetFile = await findFileRecursively(tempExtractLocation, assetPathInsideZip);
+            
+            if (extractedAssetFile && fs.existsSync(extractedAssetFile)) {
+              const fileName = path.basename(assetPathInsideZip);
+
+              // Simpan ke Cache (.resources)
+              const cacheDest = path.join(centralResourcesPath, assetPathInsideZip);
+              await fs.ensureDir(path.dirname(cacheDest));
+              await fs.copy(extractedAssetFile, cacheDest);
+
+              // Simpan ke Folder Projek Root
+              await fs.copy(extractedAssetFile, path.join(projectDestFolder, fileName));
+              logger.success(`[${category.toUpperCase()}] Berhasil memasang ${fileName}`);
+            } else {
+              logger.error(`File [${path.basename(assetPathInsideZip)}] tidak ditemukan di dalam ZIP rilis meskipun sudah dicari rekursif.`);
             }
           }
         }
       }
 
-      // Opsional: Hapus file zip setelah selesai, tapi biarkan hasil ekstraksinya
-      await fs.remove(downloadPath);
-      logger.info(`Resource ${repo} berhasil diinstal langsung.`);
+      // 6. Pemetaan Kustom ("files") ke Direktori Target Bebas
+      if (matchedResource.files && typeof matchedResource.files === 'object') {
+        logger.info(`Memeriksa file dependensi tambahan ("files")...`);
+        
+        for (const [insideZipPath, targetRootPath] of Object.entries(matchedResource.files)) {
+          const extractedFile = await findFileRecursively(tempExtractLocation, insideZipPath);
+          const finalRootDest = path.join(process.cwd(), targetRootPath);
+
+          if (extractedFile && fs.existsSync(extractedFile)) {
+            await fs.ensureDir(path.dirname(finalRootDest));
+            await fs.copy(extractedFile, finalRootDest);
+            logger.success(`[ROOT FILES] Berhasil memasang file tambahan: ${targetRootPath}`);
+          } else {
+            logger.error(`File tambahan [${path.basename(insideZipPath)}] tidak ditemukan di dalam ZIP rilis.`);
+          }
+        }
+      }
+
+      // 7. Pembersihan Berkas Sementara
+      await fs.remove(tempResourceZip);
+      await fs.remove(tempExtractLocation);
       
+      logger.info(`Resource ${repo} berhasil diproses dan disinkronisasikan.`);
+
     } catch (err: any) {
-      logger.error(`Gagal memproses resource: ${err.message}`);
+      logger.error(`Gagal memproses aset biner dari Release: ${err.message}`);
+      // Bersihkan sisa temp jika terjadi error di tengah jalan
+      const tempResourceZip = path.join(process.cwd(), `${repo}-resource-temp.zip`);
+      const tempExtractLocation = path.join(process.cwd(), currentFolder, '.temp-extract');
+      if (fs.existsSync(tempResourceZip)) await fs.remove(tempResourceZip);
+      if (fs.existsSync(tempExtractLocation)) await fs.remove(tempExtractLocation);
     }
   },
 

@@ -14,6 +14,15 @@
 
 ---
 
+---
+## Cara build menjadi .exe
+
+# Windows (PowerShell)
+powershell -c "irm bun.sh/install.ps1 | iex"
+npm run build
+
+---
+
 ## 🚀 Teknologi yang Digunakan
 
 Proyek CLI ini dibangun menggunakan ekosistem Node.js yang andal:

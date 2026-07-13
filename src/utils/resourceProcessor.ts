@@ -1,30 +1,31 @@
 import fs from 'fs-extra';
 import path from 'path';
 import AdmZip from 'adm-zip';
+import { glob } from 'glob';
 
 // Pindahkan logika findFileRecursively ke sini jika dibutuhkan di tempat lain
-export const findFileRecursively = (dir: string, targetRelativePath: string): string | null => {
-  const targetName = path.basename(targetRelativePath);
-  let foundPath: string | null = null;
+export async function findFileRecursively(dir: string, assetPath: string | undefined): Promise<string | null> {
+  // Jika assetPath tidak ada atau undefined, langsung batalkan proses dan return null
+  if (!assetPath) return null;
 
-  const search = (currentDir: string) => {
-    const items = fs.readdirSync(currentDir);
-    for (const item of items) {
-      const fullPath = path.join(currentDir, item);
-      const stat = fs.statSync(fullPath);
+  const fileName = path.basename(assetPath);
+  const pattern = `**/${fileName}`;
 
-      if (stat.isDirectory()) {
-        search(fullPath);
-        if (foundPath) break;
-      } else if (stat.isFile() && item.toLowerCase() === targetName.toLowerCase()) {
-        foundPath = fullPath;
-        break;
-      }
+  try {
+    const matchedFiles = await glob(pattern, { 
+      cwd: dir, 
+      absolute: true,
+      windowsPathsNoEscape: true 
+    });
+
+    if (matchedFiles && matchedFiles.length > 0 && matchedFiles[0]) {
+      return path.normalize(matchedFiles[0]);
     }
-  };
-
-  search(dir);
-  return foundPath;
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
 };
 
 export const extractZipAndRename = (zipPath: string, targetExtractPath: string, finalRepoPath: string): void => {
