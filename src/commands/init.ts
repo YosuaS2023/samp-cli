@@ -61,6 +61,9 @@ export default async function initAction(): Promise<void> {
         repo: gitRepo,
         entry: "main.pwn",
         output: "gamemodes/main.amx",
+        build: {
+          compiler: { preset: "3.10.10" }
+        },
         dependencies: []
     });
 
