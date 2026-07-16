@@ -1,36 +1,57 @@
 export interface Resource {
-    name: string;
-    platform: 'windows' | 'linux';
-    archive?: boolean;
+  name: string;
+  platform: 'windows' | 'linux';
+  archive?: boolean;
 
-    includes?: string[];
-    plugins?: string[];
-    components?: string[];
-    filterscripts?: string[];
+  includes?: string[];
+  plugins?: string[];
+  components?: string[];
+  filterscripts?: string[];
 
-    files?: Record<string, string>;
-}
+  files?: Record<string, string>;
+};
 
 export interface Runtime {
-    plugins?: string[];
-    components?: string[];
-    filterscripts?: string[];
-}
+  plugins?: string[];
+  components?: string[];
+  filterscripts?: string[];
+};
+
+export interface CompilerConfig {
+  preset: string;
+};
+
+export interface BuildConfig {
+  compiler: CompilerConfig;
+};
 
 export interface ProjectPawnConfig {
-    user: string;
-    repo: string;
-    entry: string;
-    output: string;
-
-    dependencies: string[] | Record<string, string>;
-}
+  user: string;
+  repo: string;
+  entry: string;
+  output: string;
+  build: BuildConfig;
+  dependencies: string[] | Record<string, string>;
+};
 
 export interface DependencyPawnConfig {
-    user: string;
-    repo: string;
+  user: string;
+  repo: string;
 
-    resources?: Resource[];
-    runtime?: Runtime;
-    contributors?: string[];
+  resources?: Resource[];
+  runtime?: Runtime;
+  contributors?: string[];
+};
+
+export interface ArrayWarning {
+  line: number;
+  variableName: string;
+  accessedIndex: number;
+  limitSize: number;
+  message: string;
+}
+
+export interface VerifyResult {
+  warnings: ArrayWarning[];
+  isClean: boolean;
 }

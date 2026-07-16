@@ -7,7 +7,12 @@ import initAction from './commands/init.js';
 import { logger } from './utils/logger.js';
 import { githubService } from './services/githubService.js';
 import { ProjectConfig } from './config/ProjectConfig.js';
-import { config } from 'node:process';
+
+import { buildAction } from './commands/build.js';
+import { installCompilerAction, selectCompilerAction } from './commands/compiler.js';
+
+import { parseTest } from './commands/parse.js';
+import { runTest } from './commands/test.js';
 
 const program = new Command();
 
@@ -19,7 +24,7 @@ program
 program
   .command('init')
   .description('Inisialisasi project SA-MP baru')
-  .action(initAction); 
+  .action(initAction);
 
 program
   .command('install [dependency]')
@@ -39,7 +44,7 @@ program
       
       const config = new ProjectConfig();
       config.addDependency(dependency);
-
+      
       process.exit(0);
     } else {
       logger.error(`Proses instalasi ${dependency} gagal.`);
@@ -48,46 +53,36 @@ program
     }
   });
 
+program 
+  .command('parse')
+  .description('parse')
+  .action(parseTest);
+
+const sourceCode = `
+    new myArr[5];
+    myArr[10] = 1;
+`;
+
 program
-  .command('test')
-  .description('test')
-  .action(async () => {
-    logger.info("Memulai pengecekan file konfigurasi...");
-
-    const config = new ProjectConfig();
-
-    if (config.exists()) {
-      logger.success("File pawn.json ditemukan!");
-
-      const pawnjson = config.read();
-      
-      if (config) {
-        if (!pawnjson) {
-            logger.error("Gagal membaca pawn.json");
-            return;
-        }
-        logger.log(`\nNama Repositori: ${pawnjson.user}/${pawnjson.repo}`);
-        logger.log(`Entry Point: ${pawnjson.entry}`);
-        logger.log(`Output File: ${pawnjson.output}\n`);
-
-        logger.info("Mengambil daftar dependensi (includes)...");
-        const deps = config.getDependencies();
-        
-        logger.log("Daftar Dependensi yang ditemukan:");
-        
-        let index = 1;
-        for (const dep of deps) {
-          logger.log(`  ${index}. ${dep}`);
-          await githubService.downloadRepo(dep);
-          index++;
-        }
-
-        logger.success("Semua proses pengetesan selesai!");
-        
-      }
-    } else {
-      logger.error("File pawn.json TIDAK ditemukan di folder ini.");
-    }
+  .command('parse2').description('test parse 2').action(() => {
+    runTest(sourceCode)
   });
+program
+  .command('build')
+  .description('Kompilasi proyek menggunakan compiler yang diatur di config')
+  .action(buildAction);
+
+const compilerCmd = program.command('compiler').description('Manajemen Compiler Pawn');
+
+compilerCmd
+  .command('install <version>')
+  .description('Unduh dan cache compiler Pawn versi spesifik (misal: 3.10.10)')
+  .action(installCompilerAction);
+
+compilerCmd
+  .command('use')
+  .description('Pilih compiler dari lokal secara interaktif')
+  .action(selectCompilerAction);
+
 
 program.parse(process.argv);

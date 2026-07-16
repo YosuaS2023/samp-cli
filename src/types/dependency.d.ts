@@ -7,15 +7,15 @@ export interface DependencyInfo {
 }
 
 export interface DependencyResource {
-    name: string;
-    platform: 'windows' | 'linux';
-    archive?: boolean;
+  name: string;
+  platform: 'windows' | 'linux';
+  archive?: boolean;
 
-    includes?: string[];
-    plugins?: string[];
-    components?: string[];
-    filterscripts?: string[];
-    gamemodes?: string[];
+  includes?: string[];
+  plugins?: string[];
+  components?: string[];
+  filterscripts?: string[];
+  gamemodes?: string[];
 
-    files?: Record<string, string>;
+  files?: Record<string, string>;
 }
