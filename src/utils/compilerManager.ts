@@ -33,7 +33,6 @@ export async function ensureCompilerCache(version: string): Promise<string> {
     try {
         fs.ensureDirSync(compilerDir);
         
-        // 3. Proses Download
         const writer = fs.createWriteStream(tmpFile);
         const response = await axios({ url: releaseUrl, method: 'GET', responseType: 'stream' });
         response.data.pipe(writer);
@@ -43,19 +42,15 @@ export async function ensureCompilerCache(version: string): Promise<string> {
             writer.on('error', reject);
         });
 
-        // 4. Ekstraksi (Contoh sederhana untuk ZIP di Windows)
         if (isWin) {
             const zip = new AdmZip(tmpFile);
             zip.extractAllTo(compilerDir, true);
         } else {
-            // Catatan: Untuk Linux, kamu bisa gunakan library 'tar' (npm install tar)
-            // tar.extract({ file: tmpFile, cwd: compilerDir, sync: true });
             logger.info('Ekstraksi tar.gz untuk Linux memerlukan library tambahan (tar).');
         }
 
-        fs.unlinkSync(tmpFile); // Bersihkan file temporary
+        fs.unlinkSync(tmpFile); 
 
-        // Beri akses execute jika di Linux
         if (!isWin && fs.existsSync(compilerPath)) {
             fs.chmodSync(compilerPath, '755');
         }

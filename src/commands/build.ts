@@ -6,14 +6,13 @@ import { logger } from '../utils/logger.js';
 import { ensureCompilerCache } from '../utils/compilerManager.js';
 import type { ProjectPawnConfig } from '../types/pawn.js';
 
-// Perbarui tipe data lokal atau tambahkan langsung di file types kamu
 type CompileConfig = Pick<
   ProjectPawnConfig,
   "entry" | "output" | "dependencies" | "build"
 > & {
   build?: {
     compiler?: { preset?: string };
-    includes?: string[]; // Tambahkan definisi ini
+    includes?: string[];
   }
 };
 
@@ -32,20 +31,16 @@ export async function buildAction(): Promise<void> {
   const entryPoint = config.entry || 'gamemodes/main.pwn';
   const entryDir = path.dirname(entryPoint);
 
-  // 1. Inisialisasi include paths bawaan standar
   const includePaths: string[] = [
     path.join(process.cwd(), 'pawno', 'include'),
     path.join(process.cwd(), entryDir) 
   ];
 
-  // 2. Tambahkan custom includes dari pawn.json jika didefinisikan oleh user
   if (config.build?.includes && Array.isArray(config.build.includes)) {
     config.build.includes.forEach((customPath) => {
       const absoluteCustomPath = path.resolve(process.cwd(), customPath);
       
-      // Validasi apakah foldernya memang ada di komputer user sebelum dimasukkan
       if (fs.existsSync(absoluteCustomPath)) {
-        // Mencegah duplikasi path di dalam array
         if (!includePaths.includes(absoluteCustomPath)) {
           includePaths.push(absoluteCustomPath);
         }
@@ -55,7 +50,6 @@ export async function buildAction(): Promise<void> {
     });
   }
 
-  // 3. Proses Dependencies (Logika glob tetap sama)
   if (config.dependencies && Array.isArray(config.dependencies)) {
     config.dependencies.forEach((depPath) => {
       const [user, repo] = depPath.split('/');
@@ -93,7 +87,6 @@ export async function buildAction(): Promise<void> {
     `-o${outputPath}`
   ];
 
-  // Masukkan semua path ke argumen kompiler (-i)
   includePaths.forEach(p => compilerArgs.push(`-i${p}`));
 
   logger.info(`Memulai kompilasi menggunakan preset compiler ${targetVersion}...`);

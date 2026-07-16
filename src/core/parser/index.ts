@@ -6,14 +6,12 @@ const parser = new PawnParser();
 export function parse(source: string) {
     const lexResult = PawnLexer.tokenize(source);
     
-    // Memberikan input tokens ke parser
     parser.input = lexResult.tokens;
 
-    // Memanggil rule utama (program) untuk mendapatkan CST
     const cst = parser.program();
 
     return {
-        cst: cst,              // <-- Ini yang krusial untuk Visitor
+        cst: cst,
         lexErrors: lexResult.errors,
         parseErrors: parser.errors // Mengembalikan error jika ada
     };

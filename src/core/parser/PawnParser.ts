@@ -1,10 +1,8 @@
 import { CstParser } from "chevrotain";
-// Impor semua token sebagai namespace T agar rapi, dan allTokens secara eksplisit
 import * as T from "../lexer/index.js"; 
 
 export class PawnParser extends CstParser {
     constructor() {
-        // Gunakan array allTokens yang sudah Anda buat
         super(T.allTokens); 
         this.performSelfAnalysis();
     }
@@ -13,7 +11,7 @@ export class PawnParser extends CstParser {
         this.MANY(() => {
             this.OR([
                 { ALT: () => this.subrule(0, this.declaration) },
-                { ALT: () => this.subrule(0, this.arrayAccess) } // Tambahkan ini
+                { ALT: () => this.subrule(0, this.arrayAccess) }
             ]);
         });
     });
@@ -36,7 +34,6 @@ export class PawnParser extends CstParser {
         this.CONSUME(T.Semicolon);
     });
 
-    // PawnParser.ts
     public arrayAccess = this.RULE("arrayAccess", () => {
         this.CONSUME(T.Identifier);
         this.CONSUME(T.LBracket);

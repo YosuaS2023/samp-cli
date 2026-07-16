@@ -1,6 +1,5 @@
-// src/core/parser/PawnVisitor.ts
 import { PawnParser } from "./PawnParser.js";
-import { SymbolTable } from "../analyzer/SymbolTable.js"; 
+// import { SymbolTable } from "../analyzer/SymbolTable.js"; 
 
 const parser = new PawnParser();
 const BaseVisitor = parser.getBaseCstVisitorConstructor();
@@ -14,7 +13,6 @@ export class PawnVisitor extends BaseVisitor {
         this.validateVisitor();
     }
 
-    // Penting: Kembalikan hasil dari child nodes
     program(ctx: any) {
         // Menggabungkan hasil dari declaration dan arrayAccess
         const declarations = ctx.declaration?.map((d: any) => this.visit(d)) || [];
@@ -31,7 +29,7 @@ export class PawnVisitor extends BaseVisitor {
         return {
             type: "Declaration",
             name: ctx.Identifier[0].image,
-            size: ctx.size ? ctx.size[0].image : null // Menangani jika tidak ada ukuran
+            size: ctx.size ? ctx.size[0].image : null
         };
     }
     
@@ -39,12 +37,10 @@ export class PawnVisitor extends BaseVisitor {
         const name = ctx.Identifier[0].image;
         const index = parseInt(ctx.arrayIndex[0].children.IntegerLiteral[0].image);
         
-        // 1. Cek apakah variabel sudah dideklarasikan
         if (!this.symbolTable.has(name)) {
             throw new Error(`Keamanan: Variabel '${name}' belum dideklarasikan!`);
         }
 
-        // 2. Cek Array Out of Bounds
         const meta = this.symbolTable.get(name);
         if (meta && index >= meta.size) {
             console.error(`[SECURITY ALERT] Buffer Overflow pada '${name}'!`);
@@ -58,7 +54,7 @@ export class PawnVisitor extends BaseVisitor {
             value: ctx.arrayValue[0].children.IntegerLiteral[0].image
         };
     }
-    // TAMBAHKAN DUA METODE INI:
+    
     arrayIndex(ctx: any) {
         // Karena ini subrule, kita kembalikan saja nilai tokennya
         return ctx.IntegerLiteral[0].image;

@@ -1,12 +1,11 @@
 export interface SymbolInfo {
     name: string;
-    size: number; // 0 jika variabel biasa, >0 jika array
-    type: string;  // "new", "const", "stock", dll
+    size: number; // 0 jika variabel biasa, > 0 jika array
+    type: string;  // "new", "const", "stock"
 }
 
 export class SymbolTable {
     private symbols: Map<string, SymbolInfo> = new Map();
-    // Referensi ke scope di luarnya (parent scope) untuk pencarian bertingkat
     public parentScope: SymbolTable | null = null;
 
     constructor(parent: SymbolTable | null = null) {
