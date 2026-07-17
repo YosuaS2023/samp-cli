@@ -14,6 +14,8 @@ import { installCompilerAction, selectCompilerAction } from './commands/compiler
 import { parseTest } from './commands/parse.js';
 import { runTest } from './commands/test.js';
 
+import { resolveIncludes } from './utils/filemanager.js';
+
 const program = new Command();
 
 program
@@ -56,17 +58,18 @@ program
 program 
   .command('parse')
   .description('parse')
-  .action(parseTest);
+  .action(() => {
+    const config = new ProjectConfig();
 
-const sourceCode = `
-    new myArr[5];
-    myArr[10] = 1;
-`;
+    console.log(config.loadConstants());
+  });
 
 program
-  .command('parse2').description('test parse 2').action(() => {
-    runTest(sourceCode)
+  .command('parse2 [path_gamemode]').description('test parse 2').action((path_gamemode) => {
+    const flatSourceCode = resolveIncludes(path_gamemode);
+    runTest(path_gamemode, flatSourceCode);
   });
+
 program
   .command('build')
   .description('Kompilasi proyek menggunakan compiler yang diatur di config')

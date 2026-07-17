@@ -11,8 +11,11 @@ export const allTokens = [
     T.Stock,
     T.Public,
     T.Forward,
+    T.For,
 
     // operator
+    T.LessThan,
+    T.Increment,
     T.Assign,
     T.Plus,
     T.Minus,
@@ -34,7 +37,7 @@ export const allTokens = [
     T.IntegerLiteral,
     T.StringLiteral,
 
-    // identifier harus PALING BAWAH
+    // identifier
     T.Identifier
 ];
 

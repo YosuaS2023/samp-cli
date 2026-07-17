@@ -62,7 +62,11 @@ export default async function initAction(): Promise<void> {
         entry: "main.pwn",
         output: "gamemodes/main.amx",
         build: {
-          compiler: { preset: "3.10.10" }
+          compiler: { preset: "3.10.10" },
+          constants: {
+            "MAX_PLAYERS": 100,
+            "MAX_VEHICLES": 1000
+          }
         },
         dependencies: []
     });

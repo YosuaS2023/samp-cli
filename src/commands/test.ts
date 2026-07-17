@@ -2,7 +2,7 @@ import { PawnLexer } from "../core/lexer/index.js";
 import { PawnParser } from "../core/parser/PawnParser.js";
 import { PawnVisitor } from "../core/parser/PawnVisitor.js";
 
-export const runTest = (source: string) => {
+export const runTest = (path_gm: string, source: string) => {
     // 1. Lexing
     const lexResult = PawnLexer.tokenize(source);
     if (lexResult.errors.length > 0) {
@@ -23,7 +23,6 @@ export const runTest = (source: string) => {
     console.log("CST yang dihasilkan:", JSON.stringify(cst, null, 2));
 
     // 3. Visiting
-    const visitor = new PawnVisitor();
+    const visitor = new PawnVisitor(path_gm);
     const result = visitor.visit(cst);
-    console.log("Hasil Visitor:", result);
 }

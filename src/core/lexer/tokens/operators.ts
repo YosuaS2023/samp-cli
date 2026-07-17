@@ -5,6 +5,11 @@ export const Assign = createToken({
     pattern: /=/
 });
 
+export const Increment = createToken({
+    name: "Increment",
+    pattern: /\+\+/
+});
+
 export const Plus = createToken({
     name: "Plus",
     pattern: /\+/
@@ -23,4 +28,9 @@ export const Multiply = createToken({
 export const Divide = createToken({
     name: "Divide",
     pattern: /\//
+});
+
+export const LessThan = createToken({
+    name: "LessThan",
+    pattern: /</
 });

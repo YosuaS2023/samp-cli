@@ -2,9 +2,11 @@ import path from "path";
 
 import { logger } from "../utils/logger.js";
 import { Config } from "./BaseConfig.js";
-import type { ProjectPawnConfig } from "../types/pawn.js";
+import type { ProjectPawnConfig,BuildConfig } from "../types/pawn.js";
 
 const CONFIG_FILE = "pawn.json";
+
+type PawnConstants = Pick<BuildConfig, 'constants'>;
 
 export class ProjectConfig extends Config<ProjectPawnConfig> {
 
@@ -100,5 +102,27 @@ export class ProjectConfig extends Config<ProjectPawnConfig> {
           ? repo
         : `${repo}:${version}`
     );
+  }
+
+  loadConstants(): PawnConstants {
+    const config = this.load();
+
+    const defaultConfig: PawnConstants = {
+      constants: {
+        "MAX_PLAYERS": 500,
+        "MAX_VEHICLES": 2000
+      }
+    };
+
+    if (!config) {
+      return defaultConfig;
+    }
+
+    return {
+      constants: {
+        ...defaultConfig.constants,
+        ...(config.build?.constants || {})
+      }
+    };
   }
 }

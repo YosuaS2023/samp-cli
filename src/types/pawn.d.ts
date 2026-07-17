@@ -23,6 +23,7 @@ export interface CompilerConfig {
 
 export interface BuildConfig {
   compiler: CompilerConfig;
+  constants: Record<string, number>;
 };
 
 export interface ProjectPawnConfig {

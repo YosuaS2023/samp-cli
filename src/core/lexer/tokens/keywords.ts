@@ -1,4 +1,5 @@
 import { createToken } from "chevrotain";
+import { Identifier } from "./identifiers.js";
 
 export const New = createToken({
     name: "New",
@@ -23,4 +24,10 @@ export const Public = createToken({
 export const Forward = createToken({
     name: "Forward",
     pattern: /forward/
+});
+
+export const For = createToken({
+    name: "For",
+    pattern: /for\b/,
+    longer_alt: Identifier
 });
